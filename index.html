@@ -66,7 +66,7 @@
                 <a href="#"><i class="bx bxl-instagram"></i></a>
             </div>
 
-           <a href="tel:+79991234567" class="btn">Связаться</a>
+           <a href="tel:+79001406856" class="btn">Связаться</a>
         </div>
 
         <div class="home-img">
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <p>Мы стремимся предлагать нашим клиентам самые современные и инновационные продукты. Мы осуществляем строгий контроль качества нашей продукции, чтобы гарантировать, что наши клиенты получают уникальные товары высочайшего качества. Наша команда профессиональной поддержки клиентов, состоящая из более чем 4 человек, всегда готова предоставить вам квалифицированную помощь после покупки.</p>
 
             </p>
-           <a href="tel:+79991234567" class="btn">Связаться</a>
+           <a href="tel:+79001406856" class="btn">Связаться</a>
         </div>
 
     </section>
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h4>90 000 ₽</h4>
                 </div>
             </div>
-			 <a href="tel:+79991234567" class="btn">Купить</a>
+			 <a href="tel:+79001406856" class="btn">Купить</a>
         </div>
 		
     </div>
@@ -260,20 +260,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <h2 class="heading">Обращение<br><span style="font-size:28px;">сотрудничество</span></h2>
 
-        <form action="#">
-            <div class="input-box">
-                <input type="text" placeholder="Ваше Имя">
-                <input type="email" placeholder="Email Address">
-            </div>
-            <div class="input-box">
-                <input type="number" placeholder="Номер +7">
-                <input type="text" placeholder="Тема Письма">
-            </div>
+        <form id="contactForm" action="#" method="POST">
+    <div class="input-box">
+        <input type="text" id="name" name="name" placeholder="Ваше Имя" required>
+        <input type="email" id="email" name="email" placeholder="Email Address" required>
+    </div>
+    <div class="input-box">
+        <input type="number" id="phone" name="phone" placeholder="Номер +7" required>
+        <input type="text" id="subject" name="subject" placeholder="Тема Письма" required>
+    </div>
 
-            <textarea name="message" id="" cols="30" rows="10" placeholder="Ваше сообщение..."></textarea>
+    <textarea name="message" id="message" cols="30" rows="10" placeholder="Ваше сообщение..." required></textarea>
 
-            <input type="submit" value="Отправить сообщение" class="btn">
-        </form>
+    <button type="submit" class="btn">Отправить сообщение</button>
+</form>
+
+<script>
+    document.getElementById('contactForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Предотвращаем стандартную отправку формы
+
+        const formData = new FormData(this);
+
+        fetch('https://itana.pw:6008/send-telegram', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Сообщение успешно отправлено!'); // Или любое другое уведомление
+                document.getElementById('contactForm').reset(); // Очистка формы
+            } else {
+                alert('Ошибка при отправке сообщения.');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Произошла ошибка при отправке сообщения.');
+        });
+    });
+</script>
 
     </section>
 
