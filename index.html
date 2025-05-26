@@ -175,6 +175,60 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
 </section>
+<style>
+    .image-wrapper {
+        position: relative;
+        overflow: hidden; /* Prevent scrollbars initially */
+        width: 100%;
+        height: 300px; /* Adjust as needed */
+        cursor: pointer; /* Indicate clickability */
+    }
+
+    #main-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Maintain aspect ratio, fit within container */
+        transition: transform 0.3s ease; /* Smooth zoom transition */
+    }
+
+    .zoomed {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); /* Dark background for zoom */
+        z-index: 1000; /* Ensure it's on top */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .zoomed #main-image {
+        width: auto;
+        height: auto;
+        max-width: 90%;  /* Adjust as needed */
+        max-height: 90%; /* Adjust as needed */
+        object-fit: contain;
+        transform: scale(1); /* Reset zoom */
+    }
+
+    .zoomed #main-image.zoomed-in {
+        transform: scale(2); /* Initial zoom level - adjust as needed */
+        /* You might want to add a transition here for smooth zoom */
+    }
+
+    /* Optional: Add a close button for the zoomed view */
+    .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: white;
+        font-size: 2em;
+        cursor: pointer;
+        z-index: 1001; /* Above the zoomed image */
+    }
+</style>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -184,6 +238,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const imageSources = ['./acess/img/VM18L750W/1.jpg', './acess/img/VM18L750W/2.jpg', './acess/img/VM18L750W/3.jpg', './acess/img/VM18L750W/4.jpg', './acess/img/VM18L750W/5.jpg', './acess/img/VM18L750W/6.jpg', './acess/img/VM18L750W/7.jpg', './acess/img/VM18L750W/8.jpg', './acess/img/VM18L750W/9.jpg', './acess/img/VM18L750W/10.jpg']; // Array of image sources
         let currentImageIndex = 0;
         let isZoomed = false;
+        let touchStartX = 0;
+        let touchStartY = 0; // For vertical swipe (scroll prevention)
+        let isSwiping = false; // Flag to prevent scroll during horizontal swipe
 
         // Function to load image by index
         function loadImage(index) {
@@ -191,11 +248,18 @@ document.addEventListener('DOMContentLoaded', function() {
             sliderDots.forEach(dot => dot.classList.remove('active'));
 
             // Add active class to the selected dot
-            sliderDots[index].classList.add('active');
+            if (sliderDots[index]) { //  Handle potential index out of bounds, though this is unlikely given the code structure
+                sliderDots[index].classList.add('active');
+            }
 
             // Update main image source
             mainImage.src = imageSources[index];
             currentImageIndex = index;
+            if (isZoomed) {  // if we zoom in the image, reset the zoom
+               // if (mainImage.classList.contains('zoomed-in')) {
+                mainImage.style.transform = 'scale(1)';
+              //  }
+             }
         }
 
         // Dot click event
@@ -208,23 +272,44 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize image on load
         loadImage(0); // Load the first image initially
 
-        // Swipe functionality
-        let touchStartX = 0;
+
+
+        // Swipe functionality - Improved
         imageWrapper.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            isSwiping = false; // Reset the swiping flag
+        });
+
+        imageWrapper.addEventListener('touchmove', (e) => {
+            if (!isZoomed) { // Only handle swipes when not zoomed
+            const touchEndX = e.touches[0].clientX;
+            const touchEndY = e.touches[0].clientY;
+            const swipeDistanceX = touchEndX - touchStartX;
+            const swipeDistanceY = touchEndY - touchStartY;
+
+            if (Math.abs(swipeDistanceX) > Math.abs(swipeDistanceY) && Math.abs(swipeDistanceX) > 10) { //Horizontal swipe
+                e.preventDefault(); // Prevent scrolling when swiping horizontally
+                isSwiping = true;
+            }
+            }
         });
 
         imageWrapper.addEventListener('touchend', (e) => {
-            const touchEndX = e.changedTouches[0].clientX;
-            const swipeDistance = touchEndX - touchStartX;
+             if (!isZoomed && isSwiping) { // Only process if not zoomed and a swipe was detected
+                const touchEndX = e.changedTouches[0].clientX;
+                const swipeDistance = touchEndX - touchStartX;
 
-            if (swipeDistance > 50) {
-                // Swipe right
-                showPreviousImage();
-            } else if (swipeDistance < -50) {
-                // Swipe left
-                showNextImage();
+                if (swipeDistance > 50) {
+                    // Swipe right
+                    showPreviousImage();
+                } else if (swipeDistance < -50) {
+                    // Swipe left
+                    showNextImage();
+                }
+                isSwiping = false; // Reset the flag
             }
+
         });
 
         // Keyboard navigation
@@ -246,14 +331,38 @@ document.addEventListener('DOMContentLoaded', function() {
             loadImage(currentImageIndex);
         }
 
-        // Zoom functionality
-        imageWrapper.addEventListener('click', () => {
-            isZoomed = !isZoomed;
-            imageWrapper.classList.toggle('zoomed', isZoomed);
+
+        // Zoom functionality - Updated
+        imageWrapper.addEventListener('click', (e) => {
+            if (isZoomed) {
+                //  mainImage.classList.remove('zoomed-in');
+                mainImage.style.transform = 'scale(1)'; // Reset zoom
+                imageWrapper.classList.remove('zoomed');
+                isZoomed = false;
+            } else {
+                imageWrapper.classList.add('zoomed');
+                isZoomed = true;
+              //  mainImage.classList.add('zoomed-in'); // Apply initial zoom level
+            }
+
         });
+
+        // Optional: Close button for zoomed view (if you want a button instead of clicking again)
+        // You'll need to add the HTML for the close button as well.
+        /*
+        const closeButton = document.createElement('span');
+        closeButton.classList.add('close-button');
+        closeButton.innerHTML = '&times;'; // "X" symbol
+        imageWrapper.appendChild(closeButton);
+
+        closeButton.addEventListener('click', () => {
+            imageWrapper.classList.remove('zoomed');
+            isZoomed = false;
+        });
+
+        */
     });
 </script>
-
     <!-- Contact Section Code -->
 
     <section class="contact" id="contact">
