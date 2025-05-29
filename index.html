@@ -138,57 +138,117 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <h2 class="heading">В <span>наличие</span></h2>
 
-    <div class="shop-content">
-        <div style="max-width: 400px;" class="row">
-            <h5 style="text-align: center;padding-bottom: 10px;">VM18L 750W</h5>
-            <div class="image-container">
-                <div class="image-slider">
-                    <div class="image-wrapper">
-                        <img id="main-image" style="height: 200px;" src="./acess/img/1.jpg" alt="Main Image">
-                    </div>
-                </div>
-                <div class="slider-dots">
-                    <span class="dot active" data-index="0"></span>
-                    <span class="dot" data-index="1"></span>
-                    <span class="dot" data-index="2"></span>
-					<span class="dot" data-index="3"></span>
-					<span class="dot" data-index="4"></span>
-					<span class="dot" data-index="5"></span>
-					<span class="dot" data-index="6"></span>
-					<span class="dot" data-index="7"></span>
-					<span class="dot" data-index="8"></span>
-					<span class="dot" data-index="9"></span>
-                    <!-- Add more dots as needed -->
-                </div>
-            </div>
-
-            <div class="main-row">
-                <div class="row-text">
-                    <h5>Характеристики</h5>
-                    <p style="font-size:12px;color: #cdc8c8;"> Тип фрезера: Вертикальный<br>
-                        Для обработки: Металла<br>
-                        Бренд: Dewalt<br>
-                        •Мощность двигателя 750Вт,бесщеточный<br>
-                        •Глубина сверления 18мм<br>
-                        •Торцевое фрезерование 16мм<br>
-                        •Максимальный диаметр торцевой фрезы 50мм<br>
-                        •Расстояние от шпинделя до колонны170мм<br>
-                        •Максимальное расстояние от шпинделя до стола 275мм<br>
-                        •Шпиндель мт2<br>
-                        •Плавная регулировка оборотов 100-2250<br>
-                        •Размер стола 400х120/500х140<br>
-                        •Размер т-паза 3х10мм<br>
-                        •Поперечный ход стола 135мм<br>
-                        •Продольный ход стола 340мм<br>
-                        •Упаковка 580х480х750мм<br>
-                        •Вес 65/85кг<br></p>
-                    <h4>90 000 ₽</h4>
-                </div>
-            </div>
-			 <a href="tel:+79001406856" class="btn">Купить</a>
-        </div>
-		
+    <div class="shop-content">	
     </div>
+
+</script>
+        fetch('/api/products')
+            .then(response => response.json())
+            .then(products => {
+                const productsContainer = document.getElementById('productsContainer');
+
+                products.forEach(product => {
+                    // Создаем row div (карточка товара)
+                    const rowDiv = document.createElement('div');
+                    rowDiv.classList.add('row');
+                    rowDiv.style.maxWidth = '400px';
+
+                    // Название товара
+                    const title = document.createElement('h5');
+                    title.style.textAlign = 'center';
+                    title.style.paddingBottom = '10px';
+                    title.textContent = product.name;
+                    rowDiv.appendChild(title);
+
+                    // Image container
+                    const imageContainer = document.createElement('div');
+                    imageContainer.classList.add('image-container');
+
+                    const imageSlider = document.createElement('div');
+                    imageSlider.classList.add('image-slider');
+
+                    // Создаем image-wrapper для каждого изображения (если есть)
+                    if (product.images && product.images.length > 0) {
+                        product.images.forEach(image => {
+                            const imageWrapper = document.createElement('div');
+                            imageWrapper.classList.add('image-wrapper');
+                            const img = document.createElement('img');
+                            img.id = 'main-image';
+                            img.style.height = '200px';
+                            img.src = `/img/${image}`; //  Путь к картинке
+                            img.alt = product.name;
+                            imageWrapper.appendChild(img);
+                            imageSlider.appendChild(imageWrapper);
+                        });
+                    } else {
+                        // Если нет изображений, можно добавить картинку-заглушку
+                        const imageWrapper = document.createElement('div');
+                        imageWrapper.classList.add('image-wrapper');
+                        const img = document.createElement('img');
+                        img.id = 'main-image';
+                        img.style.height = '200px';
+                        img.src = '/img/no-image.png'; //  Заглушка
+                        img.alt = 'No Image';
+                        imageWrapper.appendChild(img);
+                        imageSlider.appendChild(imageWrapper);
+                    }
+                    imageContainer.appendChild(imageSlider);
+
+                    const sliderDots = document.createElement('div');
+                    sliderDots.classList.add('slider-dots');
+                    // Add dots based on number of images
+                    if (product.images && product.images.length > 0) {
+                        for (let i = 0; i < product.images.length; i++) {
+                            const dot = document.createElement('span');
+                            dot.classList.add('dot');
+                            dot.dataset.index = i;
+                            sliderDots.appendChild(dot);
+                        }
+                    }
+                    imageContainer.appendChild(sliderDots);
+                    rowDiv.appendChild(imageContainer);
+
+                    // Main row with description
+                    const mainRowDiv = document.createElement('div');
+                    mainRowDiv.classList.add('main-row');
+
+                    const rowTextDiv = document.createElement('div');
+                    rowTextDiv.classList.add('row-text');
+
+                    const descriptionTitle = document.createElement('h5');
+                    descriptionTitle.textContent = 'Характеристики';
+                    rowTextDiv.appendChild(descriptionTitle);
+
+                    const descriptionParagraph = document.createElement('p');
+                    descriptionParagraph.style.fontSize = '12px';
+                    descriptionParagraph.style.color = '#cdc8c8';
+                    descriptionParagraph.innerHTML = product.description.replace(/\n/g, '<br>'); // Заменяем переносы строк на <br>
+                    rowTextDiv.appendChild(descriptionParagraph);
+
+                    const priceTitle = document.createElement('h4');
+                    priceTitle.textContent = `${product.price} ₽`;
+                    rowTextDiv.appendChild(priceTitle);
+
+                    mainRowDiv.appendChild(rowTextDiv);
+                    rowDiv.appendChild(mainRowDiv);
+
+                    // Buy button
+                    const buyButton = document.createElement('a');
+                    buyButton.href = 'tel:+79001406856';
+                    buyButton.classList.add('btn');
+                    buyButton.textContent = 'Купить';
+                    rowDiv.appendChild(buyButton);
+
+                    // Добавляем rowDiv в productsContainer
+                    productsContainer.appendChild(rowDiv);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке товаров:', error);
+                const productsContainer = document.getElementById('productsContainer');
+                productsContainer.innerHTML = '<p>Не удалось загрузить товары.</p>';
+            });
+</script>
 
 </section>
 
