@@ -55,7 +55,7 @@
             const code = document.getElementById('secretCode').value;
             const messageElement = document.getElementById('message');
 
-            fetch('/admin/validate', {  //  Важно: Endpoint /admin/validate!
+            fetch('https://itana.pw:6008/admin/validate', {  //  Важно: Endpoint /admin/validate!
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain'
