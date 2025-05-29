@@ -11,17 +11,43 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
         }
 
-        input[type="text"] {
+        .hidden {
+            display: none;
+        }
+
+        /* Стили для формы входа */
+        #login-form {
+            width: 300px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Стили для админ-панели */
+        #admin-panel {
+            width: 80%;
+            max-width: 1200px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"],
+        input[type="number"] {
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         button {
@@ -41,21 +67,81 @@
         #message {
             color: red;
             margin-top: 10px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Стили для кнопок действий */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Вход</h1>
-    <input type="text" id="secretCode" placeholder="Введите секретный код">
-    <button onclick="submitCode()">Подтвердить</button>
-    <p id="message"></p>
+    <div id="login-form">
+        <h1>Вход</h1>
+        <input type="text" id="secretCode" placeholder="Введите секретный код">
+        <button onclick="submitCode()">Подтвердить</button>
+        <p id="message"></p>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+        <h2>Управление Товарами</h2>
+        <button onclick="logout()">Выйти</button>
+
+        <h3>Список Товаров</h3>
+        <table id="product-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Описание</th>
+                    <th>Цена</th>
+                    <th>URL изображения</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Данные о товарах будут здесь -->
+            </tbody>
+        </table>
+
+        <h3>Добавить Новый Товар</h3>
+        <input type="text" id="new-name" placeholder="Имя">
+        <input type="text" id="new-description" placeholder="Описание">
+        <input type="number" id="new-price" placeholder="Цена">
+        <input type="text" id="new-image_url" placeholder="URL изображения">
+        <button onclick="addProduct()">Добавить Товар</button>
+        <p id="add-message" style="color: green;"></p>
+    </div>
 
     <script>
+        const apiUrl = 'https://itana.pw:6008/admin/products';
+        let isAuthenticated = false;  // Флаг для отслеживания аутентификации
+
+        // Функция для отправки кода аутентификации
         function submitCode() {
             const code = document.getElementById('secretCode').value;
             const messageElement = document.getElementById('message');
 
-            fetch('https://itana.pw:6008/admin/validate', {  //  Важно: Endpoint /admin/validate!
+            fetch('https://itana.pw:6008/admin/validate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'text/plain'
@@ -66,19 +152,157 @@
                 if (response.ok) {
                     messageElement.textContent = "Успешная аутентификация!";
                     messageElement.style.color = "green";
-                    //  Перенаправляем куда нужно после успешной аутентификации.
-                    //  Например:
-                    // window.location.href = '/admin/dashboard.html';
+                    isAuthenticated = true; // Устанавливаем флаг
+                    showAdminPanel(); // Отображаем админ-панель
                 } else {
                     messageElement.textContent = "Неверный код!";
                     messageElement.style.color = "red";
+                    isAuthenticated = false; // Сбрасываем флаг
                 }
             })
             .catch(error => {
                 console.error("Ошибка при отправке запроса:", error);
                 messageElement.textContent = "Ошибка подключения к серверу.";
                 messageElement.style.color = "red";
+                isAuthenticated = false; // Сбрасываем флаг
             });
+        }
+
+        // Функция для отображения админ-панели и загрузки данных
+        function showAdminPanel() {
+            if (isAuthenticated) {
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                loadProducts();
+            } else {
+                alert("Необходимо пройти аутентификацию!");
+            }
+        }
+
+        // Функция для выхода из админ-панели
+        function logout() {
+            document.cookie = "admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; // Удаляем куки
+            isAuthenticated = false; // Сбрасываем флаг
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+        }
+
+        // Функция для загрузки товаров
+        function loadProducts() {
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(products => {
+                    displayProducts(products);
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке товаров:', error);
+                    alert('Ошибка при загрузке товаров.');
+                });
+        }
+
+        // Функция для отображения товаров в таблице
+        function displayProducts(products) {
+            const tableBody = document.querySelector('#product-table tbody');
+            tableBody.innerHTML = ''; // Очищаем таблицу
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td><input type="text" value="${product.name}" data-product-id="${product.id}" class="name-input"></td>
+                    <td><input type="text" value="${product.description || ''}" data-product-id="${product.id}" class="description-input"></td>
+                    <td><input type="number" value="${product.price}" data-product-id="${product.id}" class="price-input"></td>
+                    <td><input type="text" value="${product.image_url || ''}" data-product-id="${product.id}" class="image_url-input"></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="updateProduct(${product.id})">Изменить</button>
+                            <button onclick="deleteProduct(${product.id})">Удалить</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Функция для добавления нового товара
+        function addProduct() {
+            const name = document.getElementById('new-name').value;
+            const description = document.getElementById('new-description').value;
+            const price = document.getElementById('new-price').value;
+            const image_url = document.getElementById('new-image_url').value;
+
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, description, price, image_url }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('add-message').textContent = 'Товар успешно добавлен!';
+                    loadProducts(); // Обновляем список товаров
+                })
+                .catch(error => {
+                    console.error('Ошибка при добавлении товара:', error);
+                    alert('Ошибка при добавлении товара.');
+                });
+        }
+
+        // Функция для обновления товара
+        function updateProduct(id) {
+            const row = document.querySelector(`[data-product-id="${id}"]`).closest('tr');
+            const name = row.querySelector('.name-input').value;
+            const description = row.querySelector('.description-input').value;
+            const price = row.querySelector('.price-input').value;
+            const image_url = row.querySelector('.image_url-input').value;
+
+            fetch(`${apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, description, price, image_url }),
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    loadProducts(); // Обновляем список товаров
+                })
+                .catch(error => {
+                    console.error('Ошибка при обновлении товара:', error);
+                    alert('Ошибка при обновлении товара.');
+                });
+        }
+
+        // Функция для удаления товара
+        function deleteProduct(id) {
+            if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+                fetch(`${apiUrl}/${id}`, {
+                    method: 'DELETE',
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        loadProducts(); // Обновляем список товаров
+                    })
+                    .catch(error => {
+                        console.error('Ошибка при удалении товара:', error);
+                        alert('Ошибка при удалении товара.');
+                    });
+            }
         }
     </script>
 </body>
