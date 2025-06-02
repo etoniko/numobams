@@ -1044,6 +1044,138 @@ document.addEventListener('DOMContentLoaded', function() {
 </section>
 
 <script>
+const articles = [
+    'NU360V','VM25L','NU210x1000LSE','NU210V400','ZAY7045FG-800','VM18L','NU360','NU240E',
+    'NU330v','NU210x800ES','ZX32G','NU210V600','NU210x800S','NU210E600','NU210x600s','NU320B',
+    'NU280x750','NU210x400S','NU210E400','NU210x400es','NU280v','NU330Plus','NU210x600ES',
+    'ZAY7045FG-1000','NU210v800LD'
+];
+
+articles.forEach(article => {
+    const basePath = `./acess/img/products/${article}`;
+    // Здесь предполагается, что в HTML уже есть контейнер с id = article
+    const container = document.getElementById(article);
+    if (!container) {
+        console.warn(`Container for article ${article} not found`);
+        return;
+    }
+
+    // Собираем картинки артикула
+    const imagePromises = [];
+    for (let i = 1; i <= 20; i++) {
+        const imgJpg = `${basePath}/${i}.jpg`;
+        const imgPng = `${basePath}/${i}.png`;
+
+        imagePromises.push(
+            fetch(imgJpg, { method: 'HEAD' }).then(res => res.ok ? imgJpg : fetch(imgPng, { method: 'HEAD' }).then(r => r.ok ? imgPng : null)).catch(() => null)
+        );
+    }
+
+    Promise.all(imagePromises).then(images => {
+        const validImages = images.filter(Boolean);
+        if (validImages.length === 0) {
+            console.warn(`No images found for article ${article}`);
+            return;
+        }
+
+        // Вставляем первое изображение в main <img> с id="main-image-ARTICLE"
+        const mainImage = container.querySelector(`#main-image-${article}`);
+        if (mainImage) mainImage.src = validImages[0];
+
+        // Добавляем точки (если у тебя есть div с классом dots внутри container)
+        const dotsContainer = container.querySelector('.slider-dots');
+        if (dotsContainer) {
+            dotsContainer.innerHTML = validImages.map((_, idx) => `<span class="dot${idx === 0 ? ' active' : ''}" data-index="${idx}"></span>`).join('');
+        }
+
+        // Добавляем логику переключения картинок по точкам
+        const dots = container.querySelectorAll('.slider-dots .dot');
+        let currentIndex = 0;
+
+        function showImage(index) {
+            if (!mainImage) return;
+            mainImage.src = validImages[index];
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[index].classList.add('active');
+            currentIndex = index;
+        }
+
+        dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => showImage(i));
+        });
+
+        showImage(0);
+
+        // Обработчик открытия модалки при клике на main image
+        if (mainImage) {
+            mainImage.addEventListener('click', () => {
+                openModal(validImages, currentIndex);
+            });
+        }
+    });
+});
+
+// Модалка (как раньше, если у тебя она есть в HTML)
+// ... твой код до объявления modal, modalImg и навигации ...
+
+const modal = document.getElementById('image-modal');
+const modalImg = document.getElementById('modal-image');
+const closeBtn = document.querySelector('.image-modal .close-btn');
+const navLeft = document.querySelector('.image-modal .modal-nav.left');
+const navRight = document.querySelector('.image-modal .modal-nav.right');
+
+let modalImages = [];
+let modalCurrentIndex = 0;
+
+function updateNavVisibility() {
+    if (modalImages.length <= 1) {
+        navLeft.style.display = 'none';
+        navRight.style.display = 'none';
+    } else {
+        navLeft.style.display = modalCurrentIndex === 0 ? 'none' : 'block';
+        navRight.style.display = modalCurrentIndex === modalImages.length - 1 ? 'none' : 'block';
+    }
+}
+
+function openModal(images, index) {
+    modalImages = images;
+    modalCurrentIndex = index;
+    modal.style.display = 'flex';
+    showModalImage();
+    updateNavVisibility();
+}
+
+function showModalImage() {
+    modalImg.src = modalImages[modalCurrentIndex];
+    updateNavVisibility();
+}
+
+closeBtn.onclick = () => modal.style.display = 'none';
+
+navLeft.onclick = () => {
+    if (modalCurrentIndex > 0) {
+        modalCurrentIndex--;
+        showModalImage();
+    }
+};
+
+navRight.onclick = () => {
+    if (modalCurrentIndex < modalImages.length - 1) {
+        modalCurrentIndex++;
+        showModalImage();
+    }
+};
+
+window.addEventListener('keydown', e => {
+    if (modal.style.display === 'flex') {
+        if (e.key === 'ArrowLeft' && modalCurrentIndex > 0) navLeft.click();
+        if (e.key === 'ArrowRight' && modalCurrentIndex < modalImages.length - 1) navRight.click();
+        if (e.key === 'Escape') closeBtn.click();
+    }
+});
+
+
+
 function scrollElementToCenter(element) {
     if (!element) return;
 
@@ -1082,55 +1214,6 @@ function scrollToHashWithRetry(retryInterval = 300, maxRetries = 20) {
 }
 
 scrollToHashWithRetry();
-
-
-
-const modal = document.getElementById('image-modal');
-const modalImg = document.getElementById('modal-image');
-const closeBtn = document.querySelector('.image-modal .close-btn');
-const navLeft = document.querySelector('.image-modal .modal-nav.left');
-const navRight = document.querySelector('.image-modal .modal-nav.right');
-
-let modalImages = [];
-let modalCurrentIndex = 0;
-
-function openModal(images, index) {
-    modalImages = images;
-    modalCurrentIndex = index;
-    modal.style.display = 'flex';
-    showModalImage();
-}
-
-function showModalImage() {
-    modalImg.src = modalImages[modalCurrentIndex];
-}
-
-closeBtn.onclick = () => modal.style.display = 'none';
-
-navLeft.onclick = () => {
-    modalCurrentIndex = (modalCurrentIndex - 1 + modalImages.length) % modalImages.length;
-    showModalImage();
-};
-
-navRight.onclick = () => {
-    modalCurrentIndex = (modalCurrentIndex + 1) % modalImages.length;
-    showModalImage();
-};
-
-window.addEventListener('keydown', e => {
-    if (modal.style.display === 'flex') {
-        if (e.key === 'ArrowLeft') navLeft.click();
-        if (e.key === 'ArrowRight') navRight.click();
-        if (e.key === 'Escape') closeBtn.click();
-    }
-});
-
-document.querySelectorAll('.image-wrapper img').forEach((img, index, imgs) => {
-  img.addEventListener('click', () => {
-    const images = Array.from(imgs).map(i => i.src);
-    openModal(images, index);
-  });
-});
 
 </script>
 
