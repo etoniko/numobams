@@ -68,10 +68,10 @@
     <!-- Home Section Code -->
 <!-- Модальное окно для полноэкранного просмотра -->
 <div id="image-modal" class="image-modal">
-  <span class="close-btn">×</span>
+  <span class="close-btn">&times;</span>
   <img class="modal-img" id="modal-image" src="">
-  <div class="modal-nav left">❮</div>
-  <div class="modal-nav right">❯</div>
+  <div class="modal-nav left">&#10094;</div>
+  <div class="modal-nav right">&#10095;</div>
 </div>
 
     <section class="home" id="home">
@@ -1082,6 +1082,56 @@ function scrollToHashWithRetry(retryInterval = 300, maxRetries = 20) {
 }
 
 scrollToHashWithRetry();
+
+
+
+const modal = document.getElementById('image-modal');
+const modalImg = document.getElementById('modal-image');
+const closeBtn = document.querySelector('.image-modal .close-btn');
+const navLeft = document.querySelector('.image-modal .modal-nav.left');
+const navRight = document.querySelector('.image-modal .modal-nav.right');
+
+let modalImages = [];
+let modalCurrentIndex = 0;
+
+function openModal(images, index) {
+    modalImages = images;
+    modalCurrentIndex = index;
+    modal.style.display = 'flex';
+    showModalImage();
+}
+
+function showModalImage() {
+    modalImg.src = modalImages[modalCurrentIndex];
+}
+
+closeBtn.onclick = () => modal.style.display = 'none';
+
+navLeft.onclick = () => {
+    modalCurrentIndex = (modalCurrentIndex - 1 + modalImages.length) % modalImages.length;
+    showModalImage();
+};
+
+navRight.onclick = () => {
+    modalCurrentIndex = (modalCurrentIndex + 1) % modalImages.length;
+    showModalImage();
+};
+
+window.addEventListener('keydown', e => {
+    if (modal.style.display === 'flex') {
+        if (e.key === 'ArrowLeft') navLeft.click();
+        if (e.key === 'ArrowRight') navRight.click();
+        if (e.key === 'Escape') closeBtn.click();
+    }
+});
+
+document.querySelectorAll('.image-wrapper img').forEach((img, index, imgs) => {
+  img.addEventListener('click', () => {
+    const images = Array.from(imgs).map(i => i.src);
+    openModal(images, index);
+  });
+});
+
 </script>
 
 <style>
