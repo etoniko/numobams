@@ -9,7 +9,31 @@
     scroll-behavior: smooth;
     font-family: -apple-system, sans-serif;
 }
+/* Скрываем скроллбар, но оставляем возможность скроллить */
 
+/* Firefox */
+html,
+body,
+.no-scrollbar {
+    scrollbar-width: none;          /* полностью скрывает полосу */
+    /* scrollbar-width: thin;       ← если хотите тонкую полосу вместо скрытия */
+}
+
+/* Chrome, Edge, Safari, Opera (новые версии) */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+    display: none;                  /* полностью скрывает */
+    width: 0;                       /* запасной вариант */
+    height: 0;
+}
+
+/* Старые Edge и IE (на всякий случай) */
+html,
+body,
+.no-scrollbar {
+    -ms-overflow-style: none;
+}
 :root {
     --bg-color: #001;
     --second-bg-color: #112;
@@ -591,4 +615,5 @@ span {
     #zoom-slider {
         width: 100%;
         margin-top: 10px;
+
     }
